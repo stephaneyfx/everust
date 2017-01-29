@@ -1,0 +1,10 @@
+[package]
+name = "everust"
+version = "0.1.0"
+authors = ["Stephane Raux <stephaneyfx@gmail.com>"]
+description = "Evaluates rust code."
+license = "MIT"
+keywords = ["evaluate", "interpret", "interpreter", "repl"]
+
+[dependencies]
+tempdir = "0.3.5"
