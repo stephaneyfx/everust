@@ -1,6 +1,6 @@
 [package]
 name = "everust"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Stephane Raux <stephaneyfx@gmail.com>"]
 description = "Evaluates rust code."
 license = "MIT"
