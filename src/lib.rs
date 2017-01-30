@@ -67,6 +67,9 @@ impl Display for EvalError {
 /// The type of the expression must be `Debug`. If successful, the result of the
 /// evaluation is formatted with `Debug` and returned.
 ///
+/// **The current implementation calls rustc and requires it to be in the
+/// PATH.**
+///
 /// # Errors
 ///
 /// If the evaluation fails because of a build error, the returned error value

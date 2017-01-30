@@ -4,7 +4,9 @@ version = "0.1.1"
 authors = ["Stephane Raux <stephaneyfx@gmail.com>"]
 description = "Evaluates rust code."
 license = "MIT"
+homepage = "https://github.com/stephaneyfx/everust.git"
 repository = "https://github.com/stephaneyfx/everust.git"
+documentation = "https://docs.rs/everust"
 keywords = ["evaluate", "interpret", "interpreter", "repl"]
 
 [dependencies]
