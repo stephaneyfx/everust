@@ -4,4 +4,4 @@
 
 # Purpose
 
-Rust crate to evaluate rust code.
+Rust crate to evaluate rust code using rustc.

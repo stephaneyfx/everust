@@ -7,8 +7,13 @@ extern crate everust;
 use everust::eval;
 
 #[test]
-fn eval_bad() {
-    assert!(eval(r##""blah" + 4"##).unwrap_err().build_failed());
+fn eval_invalid() {
+    let error = eval(r##""blah" + 4"##).unwrap_err();
+    let failure = match error {
+        everust::EvalError::BuildFailed(_) => true,
+        _ => false,
+    };
+    assert!(failure);
 }
 
 #[test]
