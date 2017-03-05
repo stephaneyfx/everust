@@ -10,7 +10,7 @@ use everust::eval;
 fn eval_invalid() {
     let error = eval(r##""blah" + 4"##).unwrap_err();
     let failure = match error {
-        everust::EvalError::BuildFailed(_) => true,
+        everust::EvalError::Build(_) => true,
         _ => false,
     };
     assert!(failure);

@@ -19,26 +19,26 @@ use tempdir::TempDir;
 #[derive(Debug)]
 pub enum EvalError {
     /// The string contains the build messages.
-    BuildFailed(String),
+    Build(String),
     /// Other type of error.
-    OtherErr(OtherFailure),
+    Other(OtherFailure),
     /// The string contains what was written by the program to stderr.
-    ProgExitedWithErr(String),
+    ProgReturnedError(String),
 }
 
 impl Error for EvalError {
     fn cause(&self) -> Option<&Error> {
         match *self {
-            EvalError::OtherErr(ref e) => Some(&e.0),
+            EvalError::Other(ref e) => Some(&e.0),
             _ => None,
         }
     }
 
     fn description(&self) -> &str {
         match *self {
-            EvalError::BuildFailed(_) => "Build failed",
-            EvalError::OtherErr(_) => "Other error",
-            EvalError::ProgExitedWithErr(_) => "Program exited with error",
+            EvalError::Build(_) => "Build failed",
+            EvalError::Other(_) => "Other error",
+            EvalError::ProgReturnedError(_) => "Program returned an error",
         }
     }
 }
@@ -47,8 +47,8 @@ impl Display for EvalError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.description())?;
         let s = match *self {
-            EvalError::BuildFailed(ref s) => s,
-            EvalError::ProgExitedWithErr(ref s) => s,
+            EvalError::Build(ref s) => s,
+            EvalError::ProgReturnedError(ref s) => s,
             _ => return Ok(()),
         };
         write!(f, "\n{}", s)
@@ -61,30 +61,29 @@ pub struct OtherFailure(OtherError);
 
 #[derive(Debug)]
 enum OtherError {
-    FailedToCreateTempDir(io::Error),
-    FailedToSpawnProg(io::Error),
-    FailedToSpawnRustc(io::Error),
-    FailedToWriteSrcFile(io::Error),
+    CreateTempDir(io::Error),
+    SpawnProg(io::Error),
+    SpawnRustc(io::Error),
+    WriteSrcFile(io::Error),
 }
 
 impl Error for OtherError {
     fn cause(&self) -> Option<&Error> {
         match *self {
-            OtherError::FailedToCreateTempDir(ref e) => Some(e),
-            OtherError::FailedToSpawnProg(ref e) => Some(e),
-            OtherError::FailedToSpawnRustc(ref e) => Some(e),
-            OtherError::FailedToWriteSrcFile(ref e) => Some(e),
+            OtherError::CreateTempDir(ref e) => Some(e),
+            OtherError::SpawnProg(ref e) => Some(e),
+            OtherError::SpawnRustc(ref e) => Some(e),
+            OtherError::WriteSrcFile(ref e) => Some(e),
         }
     }
 
     fn description(&self) -> &str {
         match *self {
-            OtherError::FailedToCreateTempDir(_) => "Failed to create \
-                temporary directory",
-            OtherError::FailedToSpawnProg(_) => "Failed to spawn program",
-            OtherError::FailedToSpawnRustc(_) => "Failed to spawn rustc",
-            OtherError::FailedToWriteSrcFile(_) => "Failed to write \
-                source file",
+            OtherError::CreateTempDir(_) => "Failed to create temporary \
+                directory",
+            OtherError::SpawnProg(_) => "Failed to spawn program",
+            OtherError::SpawnRustc(_) => "Failed to spawn rustc",
+            OtherError::WriteSrcFile(_) => "Failed to write source file",
         }
     }
 }
@@ -97,7 +96,7 @@ impl Display for OtherError {
 
 impl From<OtherError> for EvalError {
     fn from(e: OtherError) -> EvalError {
-        EvalError::OtherErr(OtherFailure(e))
+        EvalError::Other(OtherFailure(e))
     }
 }
 
@@ -121,28 +120,26 @@ impl From<OtherError> for EvalError {
 /// assert_eq!("2", eval("let n = 1; n + 1").unwrap());
 /// ```
 pub fn eval(code: &str) -> Result<String, EvalError> {
-    let temp = TempDir::new("").map_err(OtherError::FailedToCreateTempDir)?;
+    let temp = TempDir::new("").map_err(OtherError::CreateTempDir)?;
     let code_path = temp.path().join("main.rs");
-    write_source_file(&code_path, code)
-        .map_err(OtherError::FailedToWriteSrcFile)?;
+    write_source_file(&code_path, code).map_err(OtherError::WriteSrcFile)?;
     let out_path = temp.path().join("main");
     let out = Command::new("rustc")
         .arg("-o")
         .arg(&out_path)
         .arg(&code_path)
         .output()
-        .map_err(OtherError::FailedToSpawnRustc)?;
+        .map_err(OtherError::SpawnRustc)?;
     if !out.status.success() {
-        return Err(EvalError::BuildFailed(String::from_utf8_lossy(
-            &out.stderr).into_owned()))
+        return Err(EvalError::Build(String::from_utf8_lossy(&out.stderr)
+            .into_owned()))
     }
-    let out = Command::new(&out_path).output()
-        .map_err(OtherError::FailedToSpawnProg)?;
+    let out = Command::new(&out_path).output().map_err(OtherError::SpawnProg)?;
     if out.status.success() {
         Ok(String::from_utf8_lossy(&out.stdout).into_owned())
     } else {
-        Err(EvalError::ProgExitedWithErr(String::from_utf8_lossy(
-            &out.stderr).into_owned()))
+        Err(EvalError::ProgReturnedError(String::from_utf8_lossy(&out.stderr)
+            .into_owned()))
     }
 }
 
